@@ -131,6 +131,9 @@ export default {
 
             // 表单验证规则
             rules: {
+                SDTMIG: [
+                    { required: true, message: "请选择SDTMIG版本", trigger: "change" },
+                ],
                 SDTMIGDescription: [
                     { required: true, message: "请输入SDTMIG文件说明", trigger: "blur" },
                 ],
@@ -141,7 +144,7 @@ export default {
                     { required: true, message: "请上传原始数据集", trigger: "blur" },
                 ],
                 termVersion: [
-                    { required: true, message: "请选择受控术语版本", trigger: "blur" },
+                    { required: true, message: "请选择受控术语版本", trigger: "change" },
                 ],
                 termFileDescription: [
                     { required: true, message: "请输入受控术语文件说明", trigger: "blur" },
@@ -166,14 +169,13 @@ export default {
             let _this = this;
 
             // 获得 SDTMIG选项
-            _this.SDTMIGOptions.push({ label: "2.1", value: "2.1" });
-            // postForm("/config/querySdtmig", {}, this, function (res) {
-            //     let data = res.data;
+            postForm("/config/querySdtmig", {}, this, function (res) {
+                let data = res.data;
 
-            //     for (let i = 0; i < data.length; i++) {
-            //         _this.SDTMIGOptions.push({ label: data[i], value: data[i] });
-            //     }
-            // });
+                for (let i = 0; i < data.length; i++) {
+                    _this.SDTMIGOptions.push({ label: data[i], value: data[i] });
+                }
+            });
 
             // 获得 DEFINE-XML选项
             postForm("/config/queryDefineVersion", {}, this, function (res) {
@@ -185,14 +187,13 @@ export default {
             });
 
             // 获得 受控术语版本选项
-            _this.termVersionOptions.push({ label: "2.1", value: "2.1" });
-            // postForm("/config/queryCtVersion", {}, this, function (res) {
-            //     let data = res.data;
+            postForm("/config/queryCtVersion", {}, this, function (res) {
+                let data = res.data;
 
-            //     for (let i = 0; i < data.length; i++) {
-            //         _this.termVersionOptions.push({ label: data[i], value: data[i] });
-            //     }
-            // });
+                for (let i = 0; i < data.length; i++) {
+                    _this.termVersionOptions.push({ label: data[i], value: data[i] });
+                }
+            });
         },
 
         // 处理上传成功的回调 aCRF
@@ -222,21 +223,21 @@ export default {
             // 检查 dataset, termVersion, termFileDescription, defineXMLDescription, SDTMIGDescription 是否为空。
             // 如果为空的话，就直接返回并发出警告
             let requiredFieldList = [
+                "SDTMIG",
                 "SDTMIGDescription",
                 "defineXMLDescription",
                 "dataset",
                 "termVersion",
                 "termFileDescription",
-                
             ];
 
             let requiredNameList = [
+                "SDTMIG",
                 "SDTMIG文件说明",
                 "DefineXML文件说明",
                 "原始数据集",
                 "受控术语版本",
                 "受控术语文件说明",
-                
             ];
 
             for(let i = 0; i < requiredFieldList.length; i++) {
@@ -294,9 +295,13 @@ export default {
 
             postForm("/config/save", postDataForm, this, function (res) {
                 if(res.state === 200){
-                    _this.$store.commit("setProjectId", res.data);
                     _this.$router.push({
                         path: "/SecondStep",
+                        query: {
+                            projectId: res.data,
+                            SDTMIG: _this.ruleForm.SDTMIG,
+                            termVersion: _this.ruleForm.termVersion,
+                        }
                     });
                     _this.loading = false;
                     _this.$message({
