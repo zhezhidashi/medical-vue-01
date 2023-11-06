@@ -49,7 +49,7 @@
                 </template>
             </el-table-column>
 
-            <!-- 已有数据 -->
+            <!-- 非折叠数据 -->
             <el-table-column prop="abbreviation" label="缩写">
             </el-table-column>
             <el-table-column prop="name" label="名称">
@@ -58,7 +58,7 @@
             </el-table-column>
 
             <!-- 操作 -->
-            <el-table-column fixed="right" label="操作" width="120">
+            <el-table-column label="操作" width="120">
                 <template slot-scope="scope">
                     <el-button @click.native.prevent="deleteRow(scope.$index, tableData)" type="text" size="small">
                         删除
