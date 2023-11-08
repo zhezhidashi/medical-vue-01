@@ -7,7 +7,7 @@
             <el-button type="primary" :loading="loading" @click="nextStep">保存并继续</el-button>
         </div>
 
-        <el-table :data="tableData" style="width: 100%">
+        <el-table :data="tableData" style="width: 100%" stripe>
             <!-- 折叠行 -->
             <el-table-column type="expand">
                 <template slot-scope="props">
