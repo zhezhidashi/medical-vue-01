@@ -130,7 +130,7 @@ export default {
             let _this = this;
             let postFormData = {
                 projectId: this.projectId,
-                version: this.termVersion,
+                version: this.SDTMIG,
             }
             postForm("/confirmDomain/queryAllDomain", postFormData, this, function (res) {
                 let data = res.data;
