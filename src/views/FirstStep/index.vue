@@ -50,7 +50,7 @@
             </el-form-item>
 
             <el-form-item label="aCRF">
-                <el-upload class="upload-demo" drag action="/api/config/upload" :on-success="handleUploadSuccess1">
+                <el-upload class="upload-demo" drag action="http://47.94.142.244:8080/config/upload" :on-success="handleUploadSuccess1">
                     <i class="el-icon-upload"></i>
                     <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
                 </el-upload>
@@ -72,7 +72,7 @@
             </el-form-item>
 
             <el-form-item label="上传原始数据集" prop="dataset">
-                <el-upload class="upload-demo" drag action="/api/config/uploadDataset" :on-success="handleUploadSuccess2">
+                <el-upload class="upload-demo" drag action="http://47.94.142.244:8080/config/uploadDataset" :on-success="handleUploadSuccess2">
                     <i class="el-icon-upload"></i>
                     <div class="el-upload__text">将文件拖到此处，或<em>点击上传</em></div>
                 </el-upload>
