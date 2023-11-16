@@ -2,8 +2,9 @@ import axios from "axios";
 import nprogress from 'nprogress';
 import "nprogress/nprogress.css";
 
-// export const baseUrl = '/api'
-export const baseUrl = 'http://47.94.142.244:8080'
+// 注：第一个页面里面两个上传文件的部分也有baseUrl，如果要改的话，一起改
+export const baseUrl = '/api'
+// export const baseUrl = 'http://47.94.142.244:8080'
 
 // 向指定的 url 提交数据表单
 export const postForm = (requestUrl, params, This, callback) => {
