@@ -66,6 +66,18 @@
                 </template>
             </el-table-column>
         </el-table>
+
+        <div style="text-align: center; margin-top:10px; margin-bottom: 10px;">
+            <el-select v-model="addDomainValue" placeholder="请选择">
+                <el-option
+                    v-for="item in addDomainOptions"
+                    :key="item.value"
+                    :label="item.label"
+                    :value="item.value">
+                </el-option>
+            </el-select>
+            <el-button type="primary" @click="addDomain">添加域</el-button>
+        </div>
     </div>
 </template>
 
@@ -109,6 +121,10 @@ export default {
                 { value: 0, label: "无" },
                 { value: 1, label: "有" },
             ],
+            
+            // 添加域下拉
+            addDomainOptions : [],
+            addDomainValue: "",
         };
     },
     mounted() {
@@ -134,6 +150,7 @@ export default {
             }
             postForm("/confirmDomain/queryAllDomain", postFormData, this, function (res) {
                 let data = res.data;
+                // 获取已有域
                 for (let item of data.domainInfoVoList) {
                     let tableDataItem = {
                         abbreviation: item.domain,
@@ -148,7 +165,16 @@ export default {
                     }
                     _this.tableData.push(tableDataItem);
                 }
+
+                // 获取可添加的域
+                for (let item of data.domainAllList) {
+                    _this.addDomainOptions.push({
+                        value: item,
+                        label: item,
+                    })
+                }
             });
+            
         },
 
         // 删除行
@@ -168,6 +194,41 @@ export default {
                     type: 'info',
                     message: '已取消删除'
                 });
+            });
+        },
+
+        // 添加域
+        addDomain() {
+            if (this.addDomainValue === "") {
+                this.$message({
+                    message: "请选择域",
+                    type: "warning",
+                });
+                return;
+            }
+
+            let _this = this;
+            let postFormData = {
+                domain: this.addDomainValue,
+                projectId: this.projectId,
+                sdtmVersion: this.SDTMIG,
+                ctVersion: this.termVersion,
+            }
+
+            postForm("/confirmDomain/queryDomInfo", postFormData, this, function (res) {
+                let data = res.data;
+                let tableDataItem = {
+                    abbreviation: data.domain,
+                    name: data.name,
+                    observeType: data.observationClass,
+                    structure: data.structure,
+                    keyVariable: data.keyVariable,
+                    fileDescription: "",
+                    fileAddress: "",
+                    dataExist: "",
+                    projectId: _this.projectId,
+                }
+                _this.tableData.push(tableDataItem);
             });
         },
 
