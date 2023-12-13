@@ -184,10 +184,28 @@ export default {
                 cancelButtonText: '取消',
                 type: 'warning'
             }).then(() => {
-                rows.splice(index, 1);
-                this.$message({
-                    type: 'success',
-                    message: '删除成功!'
+                // 从数据库中删除
+                let _this = this;
+
+                let postDataForm = {
+                    projectId: this.projectId,
+                    domain: rows[index].abbreviation,
+                }
+
+                postForm("/confirmDomain/deleteDom", postDataForm, this, function (res) {
+                    if (res.state === 200) {
+                        _this.$message({
+                            message: "删除成功",
+                            type: "success",
+                        });
+                        rows.splice(index, 1);
+                    }
+                    else {
+                        _this.$message({
+                            message: "删除失败",
+                            type: "error",
+                        });
+                    }
                 });
             }).catch(() => {
                 this.$message({

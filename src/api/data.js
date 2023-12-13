@@ -26,4 +26,12 @@ export const postForm = (requestUrl, params, This, callback) => {
             });
         }
     })
+    .catch((err) => {
+        nprogress.done()
+        console.log('postForm 的 error: ', requestUrl, err);
+        // This.$message({
+        //     message: '网络错误',
+        //     type: 'error'
+        // });
+    })
 }

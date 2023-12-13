@@ -17,10 +17,21 @@
             </el-aside>
 
             <el-container>
-                <!-- <el-header style="text-align: center; font-size: 12px">
-                    <el-button type="primary" style="margin: 10px;">添加标准变量</el-button>
+                <el-header style="text-align: center; font-size: 12px">
+                    <el-button type="primary" style="margin: 10px;" @click="addStandardVariable">添加标准变量</el-button>
+                    <div v-if="addStandardVariableVisible">
+                        <button @click="addStandardVariableSelectAll">全选</button>
+                        <label v-for="option in addStandardVariableOptions" :key="option.abbreviation">
+                            <input type="checkbox" v-model="addStandardVariableValue" :value="option.abbreviation" />
+                            {{ option.showText }}
+                        </label>
+                        <div>
+                            <button @click="addStandardVariableConfirm">确定</button>
+                            <button @click="addStandardVariableCancel">取消</button>
+                        </div>
+                    </div>
                     <el-button type="primary" style="margin: 10px;">添加自定义变量</el-button>
-                </el-header> -->
+                </el-header>
 
                 <el-main>
                     <el-table :data="tableData" stripe border>
@@ -182,7 +193,16 @@
                         <el-table-column prop="abbreviation" label="变量缩写" min-width="100px">
                         </el-table-column>
 
-                        <el-table-column label="原始数据表名" min-width="200px">
+                        <el-table-column prop="coreLevel" label="核心程度" min-width="100px">
+                        </el-table-column>
+
+                        <el-table-column label="变量名称" min-width="175px">
+                            <template slot-scope="props">
+                                <el-input v-model="props.row.name"></el-input>
+                            </template>
+                        </el-table-column>
+
+                        <!-- <el-table-column label="原始数据表名" min-width="200px">
                             <template slot-scope="props">
                                 <el-select v-model="props.row.originalTableName" placeholder="请选择" style="width: 180px;"
                                     @change="changeOriginalTableName(props.row)">
@@ -190,20 +210,69 @@
                                         :label="option.label" :value="option.value"></el-option>
                                 </el-select>
                             </template>
-                        </el-table-column>
+                        </el-table-column> -->
 
-                        <el-table-column label="表头字段" min-width="200px">
-                            <template slot-scope="props">
-                                <el-select v-model="props.row.tableHeader" placeholder="请选择" style="width: 180px;"
-                                    @visible-change="loadingTableHeaderOptions(props.row)">
-                                    <el-option v-for="option in props.row.tableHeaderOptions" :key="option.value"
-                                        :label="option.label" :value="option.value"></el-option>
-                                </el-select></template>
-                        </el-table-column>
-
-                        <el-table-column label="衍生变量" min-width="80px">
+                        <el-table-column label="衍生变量" width="80px">
                             <template slot-scope="props">
                                 <el-switch v-model="props.row.derivedFlag"></el-switch>
+                            </template>
+                        </el-table-column>
+
+
+                        <!-- 受控术语部分 -->
+                        <el-table-column label="受控术语" min-width="200px" >
+                            <template slot-scope="props" >
+                                <el-select v-model="props.row.controlledTerm" placeholder="请选择" style="width: 100%">
+                                    <el-option v-for="option in controlledTermOptions" :key="option.value" :label="option.label"
+                                        :value="option.value"></el-option>
+                                </el-select>
+                            
+
+                                <!-- 标准情况 -->
+                                
+                                <template v-if="props.row.controlledTerm === '标准'">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <el-select v-model="props.row.termGroupName" placeholder="请选择"
+                                            @visible-change="loadingTermGroupNameOptions(props.row)">
+                                            <!-- 标准术语组选什么应该由变量名确定 -->
+                                            <el-option v-for="option in props.row.termGroupNameOptions" :key="option.value"
+                                                :label="option.label" :value="option.value"></el-option>
+                                        </el-select>
+
+                                        <div>{{ props.row.termCode }}</div>
+
+                                        <el-button type="text" @click="modifyTermGroupTerm(props.row)">调整术语组术语</el-button>
+                                    </div>
+                                </template>
+
+                                <!-- 自定义情况 -->
+                                <template v-else-if="props.row.controlledTerm === '自定义'">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <div>{{ props.row.termCode }}</div>
+                                        <el-button type="text" @click="addCustomTerm(props.row)">新增自定义术语
+                                        </el-button>
+                                    </div>
+
+                                </template>
+
+                                <!-- 外部情况 -->
+                                <template v-else-if="props.row.controlledTerm === '外部'">
+                                    <div style="display: flex; flex-direction: column;">
+                                        <el-input v-model="props.row.termGroupName"
+                                            :placeholder="'术语名称'"></el-input>
+                                        <el-input v-model="props.row.termVersion"
+                                            :placeholder="'版本'"></el-input>
+                                        <el-input v-model="props.row.termLink"
+                                            :placeholder="'链接'"></el-input>
+                                    </div>
+                                </template>
+                            </template>
+                        </el-table-column>
+
+
+                        <el-table-column label="域关键变量" width="100px">
+                            <template slot-scope="props">
+                                <el-switch v-model="props.row.domainKeyVariable"></el-switch>
                             </template>
                         </el-table-column>
 
@@ -502,6 +571,11 @@ export default {
             ],
             // 新增自定义术语对应的row
             addCustomTermRow: {},
+
+            // 添加标准变量
+            addStandardVariableOptions: [],
+            addStandardVariableValue: [],
+            addStandardVariableVisible: false,
         }
     },
     mounted() {
@@ -511,10 +585,6 @@ export default {
 
         // 获取菜单项
         this.getMenuItems();
-
-        // 获取 原始数据表名
-        this.getOriginalTableName()
-
     },
     methods: {
         // 上一步
@@ -558,8 +628,19 @@ export default {
                     for (let item of data) {
                         _this.menuItems.push(item);
                     }
+
+                    // 修改当前页面domain
+                    let splitResult = data[_this.activeMenu].split("/");
+                    _this.domain = splitResult[splitResult.length - 1];
+                    
                     // 获取域的信息
                     _this.getDomainData();
+
+                    // 获取 原始数据表名
+                    _this.getOriginalTableName();
+
+                    // 获取添加标准变量的选项
+                    _this.getAddStandardVariableOptions();
                 }
                 else {
                     _this.$message({
@@ -577,6 +658,10 @@ export default {
             // 保存
             this.saveData();
 
+            // 修改当前页面domain
+            let splitResult = this.menuItems[this.activeMenu].split("/");
+            this.domain = splitResult[splitResult.length - 1];
+
             // 获取域的信息
             this.getDomainData();
 
@@ -591,11 +676,28 @@ export default {
                 cancelButtonText: '取消',
                 type: 'warning'
             }).then(() => {
-                rows.splice(index, 1);
-                this.$message({
-                    type: 'success',
-                    message: '删除成功!'
-                });
+                let _this = this;
+                let postDataForm = {
+                    projectId: rows[index].projectId,
+                    domain: rows[index].domain,
+                    variable: rows[index].abbreviation,
+                }
+
+                postForm("/varSetting/deleteVar", postDataForm, this, function (res) { 
+                    if (res.state === 200) {
+                        _this.$message({
+                            type: 'success',
+                            message: '删除成功!'
+                        });
+                        rows.splice(index, 1);
+                    }
+                    else {
+                        _this.$message({
+                            type: 'error',
+                            message: '删除失败!'
+                        });
+                    }
+                })
             }).catch(() => {
                 this.$message({
                     type: 'info',
@@ -610,15 +712,11 @@ export default {
 
             this.tableData = [];
 
-            let splitResult = this.menuItems[this.activeMenu].split("/");
-
-            // 修改当前页面domain
-            this.domain = splitResult[splitResult.length - 1];
-
             let postDataForm = {
                 projectId: this.projectId,
                 domain: this.domain,
             }
+
 
             postForm("/varSetting/queryAllVarInfo", postDataForm, this, function (res) {
                 let data = res.data;
@@ -680,7 +778,7 @@ export default {
                         // aCRF 页码
                         aCRFPage: item.acrfPage,
                         // 变量注释
-                        variableComment: item.catComment,
+                        variableComment: item.varComment,
                         // 有无数据
                         dataExist: item.hasData,
                         // projectId
@@ -710,13 +808,13 @@ export default {
                     vlm: item.VLM,
                     data: item.data,
                     variable: item.abbreviation,
-                    ctType: item.termType,
+                    ctType: item.controlledTerm,
                     source: item.source,
                     ctVersion: item.termVersion,
                     ctName: item.termGroupName,
                     varComment: item.variableComment,
                     length: item.lengthFormat,
-                    isKeyVar: item.domainKeyVariable,
+                    isKeyVar: item.domainKeyVariable === false ? 0 : 1,
                     acrfPage: item.aCRFPage,
                     varName: item.name,
                     coreDegree: item.coreLevel
@@ -729,6 +827,7 @@ export default {
         // 获取 原始数据表名
         getOriginalTableName() {
             let _this = this;
+
             let postDataForm = {
                 projectId: this.projectId,
                 domain: this.domain,
@@ -739,7 +838,7 @@ export default {
             // 获取原始数据表名
             postForm("/varSetting/querySheetName", postDataForm, this, function (res) {
                 let data = res.data;
-                for (let item of data.allSheet) {
+                for (let item of data) {
                     _this.originalTableNameOptions.push({
                         value: item,
                         label: item,
@@ -1030,6 +1129,144 @@ export default {
             this.addCustomTermDialogVisible = false;
 
         },
+
+        // 查询标准变量，放到 addStandardVariableOptions 中
+        getAddStandardVariableOptions() {
+            this.addStandardVariableOptions = [];
+            this.addStandardVariableValue = [];
+            let _this = this;
+            let postDataForm = {
+                projectId: this.projectId,
+                sdtmVersion: this.SDTMIG,
+                domain: this.domain,
+            }
+            postForm("/varSetting/queryStandardVar", postDataForm, this, function (res) {
+                let data = res.data;
+                for (let item of data) {
+                    let newItem = {
+                        abbreviation: item.variable,
+                        name: item.name,
+                        coreLevel: item.coreDegree,
+                        showText: item.coreDegree + " " + item.name + "/" + item.variable,
+                    }
+                    _this.addStandardVariableOptions.push(newItem);
+                }
+            })
+        },
+
+        // 新增标准变量打开窗口
+        addStandardVariable() {
+            if(this.addStandardVariableVisible === false) {
+                this.addStandardVariableVisible = true;
+            }
+            else {
+                this.addStandardVariableVisible = false;
+            }
+        },
+
+        // 新增标准变量 全选
+        addStandardVariableSelectAll() {
+            this.addStandardVariableValue = this.addStandardVariableOptions.slice();
+        },
+
+        // 新增标准变量 取消全选
+        addStandardVariableCancelAll() {
+            this.addStandardVariableValue = [];
+            this.addStandardVariableVisible = false;
+        },
+
+        // 新增标准变量 确定
+        addStandardVariableConfirm() {
+            this.addStandardVariableVisible = false;
+            
+            let _this = this;
+            for(let item of this.addStandVariableValue) {
+                let postDataForm = {
+                    projectId: this.projectId,
+                    ctVersion: this.termVersion,
+                    sdtmVersion: this.SDTMIG,
+                    domain: this.domain,
+                    variable: item.abbreviation,
+                }
+
+                postForm("/varSetting/queryVarInfo", postDataForm, this, function (res) {
+                    let item = res.data;
+                    
+                    let tableItem = {
+                        // 变量缩写
+                        abbreviation: item.variable,
+                        // 核心程度
+                        coreLevel: item.coreDegree,
+                        // 变量名称
+                        name: item.varName,
+                        // 原始数据表名
+                        originalTableName: item.sheetName,
+                        // 表头字段
+                        tableHeader: item.field,
+                        // 表头字段选项
+                        tableHeaderOptions: [],
+                        // 是否为衍生变量
+                        derivedFlag: item.isDerived,
+
+                        // VLM
+                        VLMFlag: item.hasVLM,
+                        VLM: item.vlm,
+                        // 数据类型
+                        dataType: item.dataType,
+                        // 受控术语
+                        controlledTerm: item.ctCode === null ? "无" : item.ctCode,
+
+
+                        // 术语组名称
+                        termGroupName: item.ctName,
+                        // 标准受控术语时的选项
+                        termGroupNameOptions: [],
+                        // 术语组术语的详细术语
+                        termGroupTermData: [],
+                        // 新增自定义术语的 Form
+                        addCustomTermForm: {},
+                        // 新增自定义术语的 Table
+                        addCustomTermTable: [],
+                        // 术语编码
+                        termCode: item.ctCode,
+                        // 术语版本
+                        termVersion: item.ctVersion,
+                        // 术语链接
+                        termLink: item.ctLink,
+
+
+                        // 长度或展示格式
+                        lengthFormat: item.length,
+                        // 数据
+                        data: item.data,
+                        // 来源
+                        source: item.source,
+                        // 域关键变量
+                        domainKeyVariable: item.isKeyVar,
+                        // 填充方法
+                        fillMethod: item.method,
+                        // aCRF 页码
+                        aCRFPage: item.acrfPage,
+                        // 变量注释
+                        variableComment: item.varComment,
+                        // 有无数据
+                        dataExist: item.hasData,
+                        // projectId
+                        projectId: item.projectId,
+                        // domain
+                        domain: item.domain,
+                    }
+                    _this.tableData.push(tableItem);
+                })
+            }
+        },
+
+        // 新增标准变量 取消
+        addStandardVariableCancel() {
+            this.addStandardVariableValue = [];
+            this.addStandardVariableVisible = false;
+        },
+
     }
 }
 </script>
