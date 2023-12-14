@@ -19,18 +19,7 @@
             <el-container>
                 <el-header style="text-align: center; font-size: 12px">
                     <el-button type="primary" style="margin: 10px;" @click="addStandardVariable">添加标准变量</el-button>
-                    <div v-if="addStandardVariableVisible">
-                        <button @click="addStandardVariableSelectAll">全选</button>
-                        <label v-for="option in addStandardVariableOptions" :key="option.abbreviation">
-                            <input type="checkbox" v-model="addStandardVariableValue" :value="option.abbreviation" />
-                            {{ option.showText }}
-                        </label>
-                        <div>
-                            <button @click="addStandardVariableConfirm">确定</button>
-                            <button @click="addStandardVariableCancel">取消</button>
-                        </div>
-                    </div>
-                    <el-button type="primary" style="margin: 10px;">添加自定义变量</el-button>
+                    <el-button type="primary" style="margin: 10px;" @click="addCustomVariable" >添加自定义变量</el-button>
                 </el-header>
 
                 <el-main>
@@ -42,7 +31,9 @@
 
                                     <!-- 已有数据 -->
                                     <el-form-item label="变量缩写">
-                                        <span>{{ props.row.abbreviation }}</span>
+                                        <span v-if="props.row.coreLevel !== '自定义'">{{ props.row.abbreviation }}</span>
+                                        <el-input v-if="props.row.coreLevel === '自定义'" v-model="props.row.abbreviation" style="width: 200px;"></el-input>
+
                                     </el-form-item>
                                     <el-form-item label="核心程度">
                                         <span>{{ props.row.coreLevel }}</span>
@@ -190,7 +181,15 @@
                         </el-table-column>
 
                         <!-- 非折叠数据 -->
-                        <el-table-column prop="abbreviation" label="变量缩写" min-width="100px">
+                        <el-table-column prop="abbreviation" label="变量缩写" min-width="175px">
+                            <template slot-scope="scope">
+                                <template v-if="scope.row.coreLevel === '自定义'">
+                                    <el-input v-model="scope.row.abbreviation"></el-input>
+                                </template>
+                                <template v-else>
+                                    {{ scope.row.abbreviation }}
+                                </template>
+                            </template>
                         </el-table-column>
 
                         <el-table-column prop="coreLevel" label="核心程度" min-width="100px">
@@ -201,16 +200,6 @@
                                 <el-input v-model="props.row.name"></el-input>
                             </template>
                         </el-table-column>
-
-                        <!-- <el-table-column label="原始数据表名" min-width="200px">
-                            <template slot-scope="props">
-                                <el-select v-model="props.row.originalTableName" placeholder="请选择" style="width: 180px;"
-                                    @change="changeOriginalTableName(props.row)">
-                                    <el-option v-for="option in originalTableNameOptions" :key="option.value"
-                                        :label="option.label" :value="option.value"></el-option>
-                                </el-select>
-                            </template>
-                        </el-table-column> -->
 
                         <el-table-column label="衍生变量" width="80px">
                             <template slot-scope="props">
@@ -364,8 +353,21 @@
 
             <span slot="footer" class="dialog-footer">
                 <el-button @click="addCustomTermOneRow">新增一条</el-button>
-                <el-button type="primary" @click="saveAddCustomTerm">确 定</el-button>
                 <el-button @click="handleDialogClose">取 消</el-button>
+                <el-button type="primary" @click="saveAddCustomTerm">确 定</el-button>
+            </span>
+        </el-dialog>
+
+        <el-dialog title="添加标准变量" :visible.sync="addStandardVariableVisible" width="90%" :before-close="handleDialogClose">
+            <el-checkbox :indeterminate="isIndeterminate" v-model="isAddStandardVariableSelectAll" @change="addStandardVariableSelectAll">全选</el-checkbox>
+            <el-checkbox-group v-model="addStandardVariableValue" @change="handleAddStandardVariableChange">
+                <el-checkbox v-for="option in addStandardVariableOptions" :key="option.abbreviation" :label="option" style="width: 45%; height: 25px;" >
+                    {{ option.showText }}
+                </el-checkbox>
+            </el-checkbox-group>
+            <span slot="footer" class="dialog-footer">
+                <el-button @click="addStandardVariableCancel">取 消</el-button>
+                <el-button type="primary" @click="addStandardVariableConfirm">确 定</el-button>
             </span>
         </el-dialog>
     </div>
@@ -573,6 +575,8 @@ export default {
             addCustomTermRow: {},
 
             // 添加标准变量
+            isIndeterminate: false,
+            isAddStandardVariableSelectAll: false,
             addStandardVariableOptions: [],
             addStandardVariableValue: [],
             addStandardVariableVisible: false,
@@ -821,7 +825,12 @@ export default {
                 }
                 postDataForm.push(postDataFormItem)
             }
-            postForm("/varSetting/save", postDataForm, this, function (res) { })
+            postForm("/varSetting/save", postDataForm, this, function (res) {
+                _this.$message({
+                    message: "自动保存域",
+                    type: "success",
+                });
+             })
         },
 
         // 获取 原始数据表名
@@ -976,6 +985,11 @@ export default {
                 this.termGroupTermDialogVisible = false;
                 // 关闭“新增自定义术语”的弹窗
                 this.addCustomTermDialogVisible = false;
+                // 关闭“添加标准变量”的弹窗
+                this.addStandardVariableValue = [];
+                this.addStandardVariableVisible = false;
+                this.isIndeterminate = false;
+                this.isAddStandardVariableSelectAll = false;
             }).catch(() => { });
         },
 
@@ -991,7 +1005,7 @@ export default {
 
                 // 编码
                 if (item.termCode !== null) {
-                    codeItem += item.code + "-";
+                    codeItem += item.termCode + "-";
                 }
                 else {
                     codeItem += "null-";
@@ -1156,17 +1170,23 @@ export default {
 
         // 新增标准变量打开窗口
         addStandardVariable() {
-            if(this.addStandardVariableVisible === false) {
-                this.addStandardVariableVisible = true;
-            }
-            else {
-                this.addStandardVariableVisible = false;
-            }
+            this.addStandardVariableValue = [];
+            this.isIndeterminate = false;
+            this.isAddStandardVariableSelectAll = false;
+            this.addStandardVariableVisible = true;
         },
 
         // 新增标准变量 全选
-        addStandardVariableSelectAll() {
-            this.addStandardVariableValue = this.addStandardVariableOptions.slice();
+        addStandardVariableSelectAll(val) {
+            this.addStandardVariableValue = val ? this.addStandardVariableOptions.slice() : [];
+            this.isIndeterminate = false;
+        },
+
+        // 新增标准变量 选择
+        handleAddStandardVariableChange(value) {
+            let checkedCount = value.length;
+            this.isAddStandardVariableSelectAll = checkedCount === this.addStandardVariableOptions.length;
+            this.isIndeterminate = checkedCount > 0 && checkedCount < this.addStandardVariableOptions.length;
         },
 
         // 新增标准变量 取消全选
@@ -1180,7 +1200,9 @@ export default {
             this.addStandardVariableVisible = false;
             
             let _this = this;
-            for(let item of this.addStandVariableValue) {
+
+            for(let index = 0; index < this.addStandardVariableValue.length; index++) {
+                let item = this.addStandardVariableValue[index];
                 let postDataForm = {
                     projectId: this.projectId,
                     ctVersion: this.termVersion,
@@ -1257,16 +1279,104 @@ export default {
                         domain: item.domain,
                     }
                     _this.tableData.push(tableItem);
+
+                    if(index === _this.addStandardVariableValue.length - 1) {
+                        _this.$message({
+                            type: 'success',
+                            message: '已添加至表格最下方!'
+                        });
+                    }
                 })
             }
         },
 
         // 新增标准变量 取消
         addStandardVariableCancel() {
-            this.addStandardVariableValue = [];
-            this.addStandardVariableVisible = false;
+            this.$confirm('不保存而直接关闭可能会丢失本次编辑的信息，是否继续?', '提示', {
+                confirmButtonText: '确定',
+                cancelButtonText: '取消',
+                type: 'warning'
+            }).then(() => {
+                // 取消全选
+                this.addStandardVariableValue = [];
+                this.addStandardVariableVisible = false;
+                this.isIndeterminate = false;
+                this.isAddStandardVariableSelectAll = false;
+            }).catch(() => { });
         },
 
+        // 新增自定义变量
+        addCustomVariable() {
+            let tableItem = {
+                // 变量缩写
+                abbreviation: "",
+                // 核心程度
+                coreLevel: "自定义",
+                // 变量名称
+                name: "",
+                // 原始数据表名
+                originalTableName: "",
+                // 表头字段
+                tableHeader: "",
+                // 表头字段选项
+                tableHeaderOptions: [],
+                // 是否为衍生变量
+                derivedFlag: true,
+
+                // VLM
+                VLMFlag: 0,
+                VLM: "",
+                // 数据类型
+                dataType: "",
+                // 受控术语
+                controlledTerm: "无",
+
+
+                // 术语组名称
+                termGroupName: "",
+                // 标准受控术语时的选项
+                termGroupNameOptions: [],
+                // 术语组术语的详细术语
+                termGroupTermData: [],
+                // 新增自定义术语的 Form
+                addCustomTermForm: {},
+                // 新增自定义术语的 Table
+                addCustomTermTable: [],
+                // 术语编码
+                termCode: "",
+                // 术语版本
+                termVersion: "",
+                // 术语链接
+                termLink: "",
+
+
+                // 长度或展示格式
+                lengthFormat: "",
+                // 数据
+                data: "",
+                // 来源
+                source: "",
+                // 域关键变量
+                domainKeyVariable: false,
+                // 填充方法
+                fillMethod: "",
+                // aCRF 页码
+                aCRFPage: "",
+                // 变量注释
+                variableComment: "",
+                // 有无数据
+                dataExist: "",
+                // projectId
+                projectId: "",
+                // domain
+                domain: this.domain,
+            }
+            this.tableData.push(tableItem);
+            this.$message({
+                message: "已添加至表格最下方",
+                type: "success",
+            });
+        },
     }
 }
 </script>
