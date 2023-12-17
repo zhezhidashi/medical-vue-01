@@ -60,6 +60,14 @@ const routes = [
                     title: '第四步'
                 },
                 component: () => import('@/views/FourthStep')
+            },
+            {
+                path: '/FifthStep',
+                name: 'FifthStep',
+                meta: {
+                    title: '第五步'
+                },
+                component: () => import('@/views/FifthStep')
             }
         ]
     },

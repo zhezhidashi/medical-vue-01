@@ -740,7 +740,7 @@ export default {
                         // 表头字段选项
                         tableHeaderOptions: [],
                         // 是否为衍生变量
-                        derivedFlag: item.isDerived,
+                        derivedFlag: item.derivedFlag,
 
                         // VLM
                         VLMFlag: item.hasVLM,
@@ -821,7 +821,11 @@ export default {
                     isKeyVar: item.domainKeyVariable === false ? 0 : 1,
                     acrfPage: item.aCRFPage,
                     varName: item.name,
-                    coreDegree: item.coreLevel
+                    coreDegree: item.coreLevel,
+                    sheetName: item.originalTableName,
+                    field: item.tableHeader,
+                    derivedFlag: item.derivedFlag === false ? 0 : 1,
+                    annex: null,
                 }
                 postDataForm.push(postDataFormItem)
             }
@@ -1228,7 +1232,7 @@ export default {
                         // 表头字段选项
                         tableHeaderOptions: [],
                         // 是否为衍生变量
-                        derivedFlag: item.isDerived,
+                        derivedFlag: item.derivedFlag,
 
                         // VLM
                         VLMFlag: item.hasVLM,

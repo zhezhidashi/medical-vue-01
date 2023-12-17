@@ -88,7 +88,6 @@
             <el-form-item label="受控术语文件说明" prop="termFileDescription">
                 <el-input v-model="ruleForm.termFileDescription"></el-input>
             </el-form-item>
-
         </el-form>
     </div>
 </template>
