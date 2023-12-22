@@ -33,8 +33,8 @@
                                     <el-form-item label="变量缩写">
                                         <span v-if="props.row.coreLevel !== '自定义'">{{ props.row.abbreviation }}</span>
                                         <el-input v-if="props.row.coreLevel === '自定义'" v-model="props.row.abbreviation" style="width: 200px;"></el-input>
-
                                     </el-form-item>
+
                                     <el-form-item label="核心程度">
                                         <span>{{ props.row.coreLevel }}</span>
                                     </el-form-item>
