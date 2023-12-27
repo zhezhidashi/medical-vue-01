@@ -5,6 +5,7 @@
             <el-form-item style="text-align: center">
                 <el-button @click="lastStep">上一步</el-button>
                 <el-button type="primary" :loading="loading" @click="nextStep">保存并继续</el-button>
+                <el-button :loading="loading" @click="saveData()">保存域</el-button>
             </el-form-item>
         </el-form>
 
@@ -137,7 +138,7 @@
 
 
                                     <el-form-item label="长度或展示格式">
-                                        <el-input v-model="props.lengthFormat" style="width: 200px;"></el-input>
+                                        <el-input v-model="props.row.lengthFormat" style="width: 200px;"></el-input>
                                     </el-form-item>
 
                                     <el-form-item label="数据">
@@ -442,7 +443,7 @@ export default {
                     // 数据类型
                     dataType: "",
                     // 是否为衍生变量
-                    derivedFlag: "",
+                    derivedFlag: false,
 
 
                     // 受控术语类型
@@ -473,7 +474,7 @@ export default {
                     // 来源
                     source: "",
                     // 域关键变量
-                    domainKeyVariable: 0,
+                    domainKeyVariable: false,
                     // 填充方法
                     fillMethod: "",
                     // aCRF 页码
@@ -605,7 +606,6 @@ export default {
 
         // 保存并继续
         nextStep() {
-            this.saveData();
             let _this = this;
             _this.$router.push({
                 path: "/FourthStep",
@@ -658,9 +658,6 @@ export default {
         // 处理菜单项选中事件
         handleMenuSelect(index) {
             this.activeMenu = index;
-
-            // 保存
-            this.saveData();
 
             // 修改当前页面domain
             let splitResult = this.menuItems[this.activeMenu].split("/");
@@ -740,7 +737,7 @@ export default {
                         // 表头字段选项
                         tableHeaderOptions: [],
                         // 是否为衍生变量
-                        derivedFlag: item.derivedFlag,
+                        derivedFlag: item.derivedFlag === 0 ? false : true,
 
                         // VLM
                         VLMFlag: item.hasVLM,
@@ -748,7 +745,7 @@ export default {
                         // 数据类型
                         dataType: item.dataType,
                         // 受控术语
-                        controlledTerm: item.ctCode === null ? "无" : item.ctCode,
+                        controlledTerm: item.ctType === null ? "无" : item.ctType,
 
 
                         // 术语组名称
@@ -776,7 +773,7 @@ export default {
                         // 来源
                         source: item.source,
                         // 域关键变量
-                        domainKeyVariable: item.isKeyVar,
+                        domainKeyVariable: item.isKeyVar === 0 ? false : true,
                         // 填充方法
                         fillMethod: item.method,
                         // aCRF 页码
@@ -798,6 +795,7 @@ export default {
         // 保存数据
         saveData() {
             let _this = this;
+            this.loading = true;
             let postDataForm = [];
             for (let item of this.tableData) {
                 let postDataFormItem = {
@@ -834,6 +832,7 @@ export default {
                     message: "自动保存域",
                     type: "success",
                 });
+                _this.loading = false;
              })
         },
 
@@ -1232,7 +1231,7 @@ export default {
                         // 表头字段选项
                         tableHeaderOptions: [],
                         // 是否为衍生变量
-                        derivedFlag: item.derivedFlag,
+                        derivedFlag: item.derivedFlag === 0 ? false : true,
 
                         // VLM
                         VLMFlag: item.hasVLM,
@@ -1240,7 +1239,7 @@ export default {
                         // 数据类型
                         dataType: item.dataType,
                         // 受控术语
-                        controlledTerm: item.ctCode === null ? "无" : item.ctCode,
+                        controlledTerm: item.ctType === null ? "无" : item.ctType,
 
 
                         // 术语组名称
@@ -1268,7 +1267,7 @@ export default {
                         // 来源
                         source: item.source,
                         // 域关键变量
-                        domainKeyVariable: item.isKeyVar,
+                        domainKeyVariable: item.isKeyVar === 0 ? false : true,
                         // 填充方法
                         fillMethod: item.method,
                         // aCRF 页码

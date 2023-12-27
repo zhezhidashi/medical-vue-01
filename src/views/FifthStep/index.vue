@@ -5,6 +5,7 @@
             <el-form-item style="text-align: center">
                 <el-button @click="lastStep">上一步</el-button>
                 <el-button type="primary" :loading="loading" @click="generateDefineXML">生成define.xml</el-button>
+                <el-button :loading="loading" @click="generateSDTM">生成SDTM</el-button>
             </el-form-item>
         </el-form>
     </div>
@@ -44,6 +45,8 @@ export default {
                 },
             });
         },
+
+        // 生成Define.xml
         generateDefineXML() {
             let _this = this;
             this.loading = true;
@@ -53,6 +56,35 @@ export default {
                 projectId: this.projectId,
             }
             postForm("/define/downloadDefine", postFormData, this, function(res){
+                console.log("define.xml", res);
+                window.open(res)
+                _this.loading = false
+            })
+        },
+
+        // 生成SDTM
+        generateSDTM() {
+            let _this = this;
+            this.loading = true;
+
+            this.$store.commit('getRuleForm')
+            let ruleForm = this.$store.state.first.ruleForm
+            
+            if(ruleForm === null || ruleForm === undefined) {
+                this.$message({
+                    message: '请重新上传第一步的原始数据集',
+                    type: 'warning'
+                });
+                this.loading = false
+                return
+            }
+
+            let postFormData = {
+                projectId: this.projectId,
+                path: ruleForm.dataset,
+            }
+            postForm("/sdtm/downloadSdtm", postFormData, this, function(res){
+                console.log("sdtm", res);
                 window.open(res)
                 _this.loading = false
             })

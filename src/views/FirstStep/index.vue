@@ -161,6 +161,11 @@ export default {
     },
     mounted() {
         this.getOptions();
+        this.$store.commit('getRuleForm')
+        let ruleForm = this.$store.state.first.ruleForm
+        if(ruleForm) {
+            this.ruleForm = ruleForm
+        }
     },
     methods: {
         // 获得 SDTMIG选项，DEFINE-XML选项，受控术语版本选项
@@ -292,6 +297,8 @@ export default {
                 postDataForm.schemeName = this.ruleForm.methodName;
             }
 
+            this.$store.commit("setRuleForm", this.ruleForm);
+            
             postForm("/config/save", postDataForm, this, function (res) {
                 if(res.state === 200){
                     _this.$router.push({

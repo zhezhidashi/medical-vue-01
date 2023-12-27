@@ -10,7 +10,7 @@
         </el-form>
 
         <el-container style="height: 80vh; border: 1px solid #eee">
-            <el-aside width="180px" style="background-color: rgb(238, 241, 246)">
+            <el-aside width="220px" style="background-color: rgb(238, 241, 246)">
                 <el-menu :default-active="String(activeMenu) + '-' + String(activeSubMenu)" class="menu" @select="handleMenuSelect">
                     <el-submenu v-for="(domainItem, domainIndex) in menuItems" :key="domainItem.domain"
                         :index="String(domainIndex)" >
@@ -69,9 +69,22 @@
                         <div v-for="(item, index) in variablesList" :key="index" :index="index">
                             <div 
                             style="display: flex; align-items: center; justify-content: space-around; margin-bottom: 10px;">
-                                <div style="width: 20%; font-size: 16px; text-align: center;">{{ item.variable }} = </div>
-                                <el-input style="width: 50%;" v-model="item.value" placeholder="请输入变量值"></el-input>
-                                <el-button style="width: 25%;" size="small" type="primary" @click="deleteVariable(index)">删除</el-button>
+                                <div style="width: 15%; font-size: 16px; text-align: center;">{{ item.variable }} = </div>
+
+                                <!-- 选择表名 -->
+                                <el-select style="width: 30%;" v-model="item.tableNameValue" placeholder="请选择">
+                                    <el-option  v-for="(option, tableIndex) in tableNameOptions" :key="tableIndex" :label="option" :value="option">
+                                        
+                                    </el-option>
+                                </el-select>
+
+                                <!-- 选择字段名 -->
+                                <el-select style="width: 30%;" v-model="item.filedNameValue" placeholder="请选择">
+                                    <el-option v-for="(option, fieldIndex) in fieldNameOptions[item.tableNameValue]" :key="fieldIndex"
+                                        :label="option" :value="option"></el-option>
+                                </el-select>
+
+                                <el-button style="width: 20%;" size="small" type="primary" @click="deleteVariable(index)">删除</el-button>
                             </div>
                         </div>
                         <el-button size="small" type="primary" @click="addVariable">添加</el-button>
@@ -137,6 +150,7 @@ export default {
             projectId: "",
             SDTMIG: "",
             termVersion: "",
+            domain: "",
             variable: "",
 
             // 加载状态
@@ -215,12 +229,27 @@ export default {
             // 可见性
             editFormulaVisible: false,
             
+            // 表名选项
+            tableNameOptions: [
+                "血氧饱和度",
+            ],
+
+            // 字段名选项
+            fieldNameOptions: {
+                "血氧饱和度": [
+                    "DOMAIN",
+                    "SUBJID",
+                    "SITEID",
+                ],
+            },
+
             // 变量列表
             variablesList: [
-                {
-                    variable: "X1",
-                    value: ""
-                },
+                // {
+                //     variable: "X1",
+                //     filedNameValue: "",
+                //     tableNameValue: "",
+                // },
             ],
             
             // 条件列表
@@ -318,7 +347,7 @@ export default {
             this.loading = true;
 
             if (this.calculateForm.derivedClass === 1) {
-                this.calculateForm.derivedMethod = "return \""  + this.calculateForm.derivedMethod + "\"";
+                this.calculateForm.derivedMethod = "return "  + this.calculateForm.derivedMethod;
             }
             else if (this.calculateForm.derivedClass === 2) {
                 this.calculateForm.derivedMethod = "x = " + this.calculateForm.derivedMethod + "\n###\nreturn x";
@@ -326,16 +355,17 @@ export default {
             else if (this.calculateForm.derivedClass === 3) {
                 let method = "";
                 for (let item of this.variablesList) {
-                    method += item.variable + " = " + item.value + "\n";
+                    method += item.variable + " = " + item.filedNameValue + "\n";
                 }
                 method += "###\n";
 
                 for (let i = 0; i < this.TabsList.length; i++) {
                     let tab = this.TabsList[i];
-                    method += "if (";
+                    // method += "if (";
+                    method += "if "
                     for (let j = 0; j < tab.length; j++) {
                         let condition = tab[j];
-                        method += "("
+                        // method += "("
 
                         if (condition.comparator === "in" || condition.comparator === "not in") {
                             method += condition.variable + " " + condition.comparator + " [" + condition.value + "]";
@@ -344,15 +374,16 @@ export default {
                             method += condition.variable + " " + condition.comparator + " " + condition.value;
                         }
 
-                        method += ")";
+                        // method += ")";
                         if (j !== tab.length - 1) {
                             method += " and ";
                         }
                     }
-                    method += "):\n";
+                    // method += "):\n";
+                    method += ":\n";
                     method += "\treturn " + this.customFormulaList[i] + "\n";
                 }
-
+                console.log(method)
                 this.calculateForm.derivedMethod = method;
             }
 
@@ -419,6 +450,7 @@ export default {
 
                 _this.domain = data[0].domain;
                 _this.variable = data[0].variables[0];
+                _this.loadTableNameOptions();
             })
         },
 
@@ -429,6 +461,7 @@ export default {
             this.activeSubMenu = Number(indexArr[1]);
             this.domain = this.menuItems[this.activeMenu].domain;
             this.variable = this.menuItems[this.activeMenu].variables[this.activeSubMenu];
+            this.loadTableNameOptions();
 
             // 清空右侧数据
             this.calculateForm.derivedType = "";
@@ -437,10 +470,11 @@ export default {
             this.calculateForm.derivedMethodDescription = "";
 
             this.variablesList = [
-                {
-                    variable: "X1",
-                    value: ""
-                },
+                // {
+                //     variable: "X1",
+                //     tableNameValue: "",
+                //     filedNameValue: "",
+                // },
             ];
 
             this.TabsList = [
@@ -458,6 +492,49 @@ export default {
             
             this.selectTabName = "case1";
             this.selectTabIndex = 0;
+        },
+
+        // 加载表名选项
+        loadTableNameOptions() {
+            let _this = this;
+
+            let postDataForm = {
+                projectId: this.projectId,
+                domain: this.domain,
+            }
+            this.tableNameOptions = [];
+            this.fieldNameOptions = {};
+
+            // 获取原始数据表名
+            postForm("/varSetting/querySheetName", postDataForm, this, function (res) {
+                let data = res.data;
+                for(let item of data){
+                    _this.tableNameOptions.push(item);
+                }
+                _this.loadFieldNameOptions(data, 0);
+            });
+        },
+
+        // 加载字段名选项，写成递归函数防止后端无法同时处理大量请求
+        loadFieldNameOptions(tableNameList, index) {
+
+            if(index >= tableNameList.length){
+                return;
+            }
+
+            let _this = this;
+
+            let postDataForm = {
+                projectId: this.projectId,
+                sheetName: tableNameList[index],
+            }
+
+            // 获取表头字段
+            postForm("/varSetting/queryField", postDataForm, this, function (res) {
+                let data = res.data;
+                _this.fieldNameOptions[tableNameList[index]] = data.slice();
+                _this.loadFieldNameOptions(tableNameList, index + 1);
+            });
         },
 
         // 编辑公式
@@ -487,7 +564,8 @@ export default {
         addVariable() {
             let variable = {
                 variable: "",
-                value: "",
+                tableNameValue: "",
+                filedNameValue: "",
             };
             this.variablesList.push(variable);
 
