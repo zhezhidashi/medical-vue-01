@@ -668,6 +668,9 @@ export default {
 
             // 获取 原始数据表名
             this.getOriginalTableName()
+
+            // 获取添加标准变量的选项
+            this.getAddStandardVariableOptions();
         },
 
         // 删除行
@@ -1168,6 +1171,7 @@ export default {
                     }
                     _this.addStandardVariableOptions.push(newItem);
                 }
+                console.log("***", _this.addStandardVariableOptions)
             })
         },
 
@@ -1372,7 +1376,7 @@ export default {
                 // projectId
                 projectId: "",
                 // domain
-                domain: this.domain,
+                domain: "SUPP" + this.domain,
             }
             this.tableData.push(tableItem);
             this.$message({
