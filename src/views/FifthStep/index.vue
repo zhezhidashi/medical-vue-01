@@ -13,7 +13,7 @@
 
 <script>
 import CommonHeader from '@/components/CommonHeader.vue'
-import { postForm } from '@/api/data'
+import { postForm, generageSDTM } from '@/api/data'
 export default {
     name: 'FifthStep',
     components: {
@@ -70,20 +70,20 @@ export default {
             this.$store.commit('getRuleForm')
             let ruleForm = this.$store.state.first.ruleForm
             
-            if(ruleForm === null || ruleForm === undefined) {
-                this.$message({
-                    message: '请重新上传第一步的原始数据集',
-                    type: 'warning'
-                });
-                this.loading = false
-                return
-            }
+            // if(ruleForm === null || ruleForm === undefined) {
+            //     this.$message({
+            //         message: '请重新上传第一步的原始数据集',
+            //         type: 'warning'
+            //     });
+            //     this.loading = false
+            //     return
+            // }
 
             let postFormData = {
                 projectId: this.projectId,
                 path: ruleForm.dataset,
             }
-            postForm("/sdtm/downloadSdtm", postFormData, this, function(res){
+            generageSDTM("/sdtm/downloadSdtm", postFormData, this, function(res){
                 console.log("sdtm", res);
                 window.open(res)
                 _this.loading = false

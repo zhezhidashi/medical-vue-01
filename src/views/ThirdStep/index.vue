@@ -326,14 +326,22 @@
         </el-dialog>
 
         <el-dialog title="新增自定义术语" :visible.sync="addCustomTermDialogVisible" width="90%" :before-close="handleDialogClose">
-            <el-form :model="addCustomTermForm" ref="addCustomTermForm" class="demo-ruleForm" label-width="auto">
-                <el-form-item label="名称" prop="name">
+            <div style="display: flex; justify-content: center; margin-bottom: 15px;">
+                <el-input v-model="queryCustomTerm" placeholder="请输入自定义术语名称" 
+                style="width: 200px; margin-right: 10px;"></el-input>
+                <el-button type="primary" @click="queryCustomTermData(queryCustomTerm)">查询</el-button>
+            </div>
+            
+
+            <el-form :model="addCustomTermForm" ref="addCustomTermForm" class="demo-ruleForm" label-width="auto"
+            style="display: flex; justify-content: space-between;">
+                <el-form-item label="名称" prop="name" style="width: 30%;">
                     <el-input v-model="addCustomTermForm.name"></el-input>
                 </el-form-item>
-                <el-form-item label="类型" prop="type">
+                <el-form-item label="类型" prop="type" style="width: 30%;">
                     <el-input v-model="addCustomTermForm.type"></el-input>
                 </el-form-item>
-                <el-form-item label="语种" prop="language">
+                <el-form-item label="语种" prop="language" style="width: 30%;">
                     <el-input v-model="addCustomTermForm.language"></el-input>
                 </el-form-item>
             </el-form>
@@ -348,6 +356,12 @@
                 <el-table-column prop="key" label="键值（实际存入的值）">
                     <template slot-scope="props">
                         <el-input v-model="props.row.key"></el-input>
+                    </template>
+                </el-table-column>
+
+                <el-table-column>
+                    <template slot-scope="props">
+                        <el-button type="text" size="small" @click="deleteCustomTermRow(props.$index, addCustomTermTable)">删除</el-button>
                     </template>
                 </el-table-column>
             </el-table>
@@ -396,30 +410,7 @@ export default {
             activeMenu: 0,
 
             // 其他菜单项
-            menuItems: [
-                // "不良事件/AE",
-                // "临床事件/CE",
-                // "既往及合并用药/CM",
-                // "药物责任/DA",
-                // "死亡详情/DD",
-                // "人口学资料/DM",
-                // "试验安排/DS",
-                // "暴露收集/EC",
-                // "心电图检查/EG",
-                // "暴露/EX",
-                // "关于事件或干预措施的发现/FA",
-                // "入排标准/IE",
-                // "实验室检查/LB",
-                // "既往病史/MH",
-                // "诊疗操作/PR",
-                // "问卷/量表/QS",
-                // "疾病反应与临床分型/RS",
-                // "受试者特征/SC",
-                // "受试者状态/SS",
-                // "物质使用/SU",
-                // "受试者访视/SV",
-                // "生命体征/VS"
-            ],
+            menuItems: [],
 
             // table数据
             tableData: [
@@ -574,6 +565,9 @@ export default {
             ],
             // 新增自定义术语对应的row
             addCustomTermRow: {},
+            // 查询自定义术语
+            queryCustomTerm: "",
+
 
             // 添加标准变量
             isIndeterminate: false,
@@ -1056,14 +1050,25 @@ export default {
             // 清空数据
             this.addCustomTermForm = {};
             this.addCustomTermTable = [];
+            this.queryCustomTerm = "";
 
-            // 加载已编辑过的数据
-            for (let item in row.addCustomTermForm) {
+            // 如果有数据就加载已编辑过的数据
+            if(row.addCustomTermTable.length != 0){
+                console.log("****111", this.addCustomTermForm, this.addCustomTermTable)
+                for (let item in row.addCustomTermForm) {
                 this.addCustomTermForm[item] = row.addCustomTermForm[item];
+                }
+                for (let item of row.addCustomTermTable) {
+                    this.addCustomTermTable.push(item);
+                }
+                
             }
-            for (let item of row.addCustomTermTable) {
-                this.addCustomTermTable.push(item);
+            else {
+                // 如果没有数据则查询
+                this.queryCustomTermData(row.termGroupName);
+                console.log("****222", this.addCustomTermForm, this.addCustomTermTable)
             }
+            
 
             // 修改对应的row
             this.addCustomTermRow = row;
@@ -1078,6 +1083,11 @@ export default {
                 description: "",
                 key: "",
             })
+        },
+
+        // 删除 新增自定义术语的 一行
+        deleteCustomTermRow(index, rows) {
+            rows.splice(index, 1);
         },
 
         // 保存 新增自定义术语
@@ -1148,6 +1158,29 @@ export default {
             // 关闭弹窗
             this.addCustomTermDialogVisible = false;
 
+        },
+
+        // 查询 新增自定义术语
+        queryCustomTermData(query) {
+            if (query === "") return
+
+            let _this = this;
+            let postDataForm = {
+                dictName: query,
+            }
+            postForm("/varSetting/queryCustomCT", postDataForm, this, function (res) {
+                let data = res.data;
+                _this.addCustomTermTable = [];
+                for (let item of data) {
+                    _this.addCustomTermForm.name = item.dictName;
+                    _this.addCustomTermForm.type = item.type;
+                    _this.addCustomTermForm.language = item.language;
+                    _this.addCustomTermTable.push({
+                        description: item.description,
+                        key: item.ctKey,
+                    })
+                }
+            })
         },
 
         // 查询标准变量，放到 addStandardVariableOptions 中
@@ -1376,7 +1409,7 @@ export default {
                 // projectId
                 projectId: "",
                 // domain
-                domain: "SUPP" + this.domain,
+                domain: "y" + this.domain,
             }
             this.tableData.push(tableItem);
             this.$message({

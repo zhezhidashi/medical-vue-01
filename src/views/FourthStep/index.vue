@@ -245,11 +245,11 @@ export default {
 
             // 变量列表
             variablesList: [
-                // {
-                //     variable: "X1",
-                //     filedNameValue: "",
-                //     tableNameValue: "",
-                // },
+                {
+                    variable: "X1",
+                    filedNameValue: "",
+                    tableNameValue: "",
+                },
             ],
             
             // 条件列表
@@ -353,6 +353,12 @@ export default {
                 this.calculateForm.derivedMethod = "x = " + this.calculateForm.derivedMethod + "\n###\nreturn x";
             }
             else if (this.calculateForm.derivedClass === 3) {
+
+                // 检查有无空变量
+                if(this.checkNullVariable()){
+                    return;
+                }
+
                 let method = "";
                 for (let item of this.variablesList) {
                     method += item.variable + " = " + item.filedNameValue + "\n";
@@ -432,6 +438,50 @@ export default {
             
         },
 
+        // 以方法三保存是，检查有无空变量，有空变量 return true
+        checkNullVariable() {
+            // 检查左侧变量
+            for (let i = 0; i < this.variablesList.length; i++) {
+                let item = this.variablesList[i];
+                if(item.filedNameValue === "" || item.tableNameValue === ""){
+                    this.$message({
+                        message: "左侧第" + (i + 1).toString() + "个变量存在空值",
+                        type: "warning",
+                    });
+                    return true;
+                }
+            }
+
+            // 检查右侧条件和自定义公式
+            for (let i = 0; i < this.TabsList.length; i++){
+                for(let j = 0; j < this.TabsList[i].length; j++){
+                    let condition = this.TabsList[i][j]
+                    if(condition.comparator === "" || condition.value === ""){
+                        this.$message({
+                            message: "右侧第" + (i + 1).toString() + "个case的第" + (j + 1).toString() + "个条件存在空值",
+                            type: "warning",
+                        });
+                        return true;
+                    }
+                }
+                if (this.TabsList[i].length === 0) {
+                    this.$message({
+                        message: "右侧第" + (i + 1).toString() + "个case为空",
+                        type: "warning",
+                    });
+                    return true;
+                }
+
+                if(this.customFormulaList[i] === ""){
+                    this.$message({
+                        message: "右侧第" + (i + 1).toString() + "个case的自定义公式为空",
+                        type: "warning",
+                    });
+                    return true;
+                }
+            }
+        },
+
         // 获取菜单数据
         getMenuData() {
             let _this = this;
@@ -470,11 +520,11 @@ export default {
             this.calculateForm.derivedMethodDescription = "";
 
             this.variablesList = [
-                // {
-                //     variable: "X1",
-                //     tableNameValue: "",
-                //     filedNameValue: "",
-                // },
+                {
+                    variable: "X1",
+                    tableNameValue: "",
+                    filedNameValue: "",
+                },
             ];
 
             this.TabsList = [
@@ -550,14 +600,25 @@ export default {
                 cancelButtonText: '取消',
                 type: 'warning'
             }).then(() => {
-                // 关闭弹窗
-                this.editFormulaVisible = false;
+                if(this.checkNullVariable()){
+                    return;
+                }
+                else {
+                    // 关闭弹窗
+                    this.editFormulaVisible = false;
+                }
             }).catch(() => { });
         },
 
         // 确定编辑公式
         confirmEditFormula() {
-            this.editFormulaVisible = false;
+            if(this.checkNullVariable()){
+                return;
+            }
+            else {
+                // 关闭弹窗
+                this.editFormulaVisible = false;
+            }
         },
 
         // 左侧添加变量
