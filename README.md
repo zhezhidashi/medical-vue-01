@@ -23,7 +23,7 @@ See [Configuration Reference](https://cli.vuejs.org/config/).
 ### git的使用
 ```
 git status
-git remote add origin git@github.com:zhezhidashi/medical-vue.git
+git remote add origin git@github.com:zhezhidashi/medical-vue-01.git
 git remote -v
 
 git add .
